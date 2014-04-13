@@ -22,7 +22,7 @@ func NewClient(cluster []string) *Client {
 // Lookups host in etcd if not found lookups in DNS and stores the result in etcd.
 func (c *Client) LookupHost(host string) (ips []string, err error) {
 	// Lookup in etcd
-	ips, err = c.lookup(host)
+	ips, err = c.Lookup(host)
 
 	// Return if found in etcd
 	if err == nil && len(ips) > 0 {
@@ -43,7 +43,7 @@ func (c *Client) LookupHost(host string) (ips []string, err error) {
 }
 
 // Lookups host in etcd.
-func (c *Client) lookup(host string) (list []string, err error) {
+func (c *Client) Lookup(host string) (addrs []string, err error) {
 	// DNS host key-prefix
 	prefix := c.hostprefix(host)
 
@@ -55,9 +55,9 @@ func (c *Client) lookup(host string) (list []string, err error) {
 	plen := len(prefix) + 1 // length of prefix + /
 
 	// Create a list of addrs from etcd response
-	list = make([]string, res.Node.Nodes.Len())
+	addrs = make([]string, res.Node.Nodes.Len())
 	for n, r := range res.Node.Nodes {
-		list[n] = r.Key[plen:]
+		addrs[n] = r.Key[plen:]
 	}
 	return
 }

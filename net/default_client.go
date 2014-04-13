@@ -7,6 +7,11 @@ import (
 
 var DefaultClient = NewClient([]string{"127.0.0.1:4001"})
 
+// Lookups host in etcd
+func Lookup(host string) (ips []string, err error) {
+	return DefaultClient.Lookup(host)
+}
+
 // Lookups host in etcd if not found lookups in DNS and stores the result in etcd.
 func LookupHost(host string) (ips []string, err error) {
 	return DefaultClient.LookupHost(host)

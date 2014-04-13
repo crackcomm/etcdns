@@ -1,8 +1,8 @@
 package etcnet
 
 import (
-	"net/http"
 	"fmt"
+	"net/http"
 )
 
 func ExampleDial() {
