@@ -12,7 +12,7 @@ type Client struct {
 }
 
 // Time after which DNS entry expires from etcd (in seconds). Default is a day.
-var ETCD_EXPIRE uint64 = 86400
+var DNS_ENTRY_TTL uint64 = 86400
 
 // Creates a new client able to Dial using etcd as DNS store.
 func NewClient(cluster []string) *Client {
@@ -36,7 +36,7 @@ func (c *Client) LookupHost(host string) (ips []string, err error) {
 	}
 
 	// And save in etcd
-	if err := c.Register(host, ips); err != nil {
+	if err := c.register(host, ips, DNS_ENTRY_TTL); err != nil {
 		log.Printf("Error saving addrs: %v", err)
 	}
 	return
@@ -119,11 +119,15 @@ func (c *Client) internalDial(d net.Dialer, network, address string) (conn net.C
 
 // Writes given addresses in etcd under /dns/{host}/{ip} key.
 // They will be possible to Dial like normal hosts.
-func (c *Client) Register(host string, ips []string) (err error) {
+func (c *Client) Register(host string, ips []string) error {
+	return c.register(host, ips, 0)
+}
+
+func (c *Client) register(host string, ips []string, ttl uint64) (err error) {
 	// Creates /dns/{host} key
 	prefix := c.hostprefix(host)
 	for _, ip := range ips {
-		_, err = c.Client.Set(prefix+"/"+ip, "ok", ETCD_EXPIRE)
+		_, err = c.Client.Set(prefix+"/"+ip, "ok", ttl)
 		if err != nil {
 			return
 		}
