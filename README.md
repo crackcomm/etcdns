@@ -20,18 +20,17 @@ func init() {
 }
 
 func server() {
-	go http.ListenAndServe("10.0.0.1:5051", nil)              // some listener
-	net.Register("secret.service", []string{"10.0.0.1:5051"}) // register service in etcd
+	go net.Register("secret.service", []string{"10.0.0.1:5051"}) // register service in etcd
+	http.ListenAndServe("10.0.0.1:5051", nil)                 // start listening for connections
 }
 
 func client() {
-	conn, err := net.Dial("tcp", "secret.service")            // will dial to 10.0.0.1:5051
+	conn, err := net.Dial("tcp", "secret.service")
 	if err != nil {
 		fmt.Printf("Error dialing secret.service")
 	}
 	defer conn.Close()
-	// Use connection
-	// ...
+	// we are now connected to 10.0.0.1:5051
 }
 ```
 
