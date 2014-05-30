@@ -1,42 +1,66 @@
 package etcnet
 
 import (
-	"fmt"
+	"log"
 	"net/http"
+	"time"
 )
 
 func ExampleDial() {
-	// Dial using etcdns
-	conn, err := Dial("tcp", "golang.org:80")
-	if err != nil {
-		fmt.Printf("Error dialing golang.org")
-	}
-	defer conn.Close()
-
-	// Write some HTTP request
-	_, err = conn.Write([]byte("GET / HTTP/1.1\nHost: golang.org\n"))
-	if err != nil {
-		fmt.Printf("Error writing request to golang.org")
-	}
-
-	// now we can read request...
-}
-
-func ExampleDial_serviceDiscovery() {
-	// on the server
-	SetCluster([]string{"public.etcd.ip:4001"})
-	go http.ListenAndServe("my.public.ip:5051", nil)          // some listener
-	Register("secret.service", []string{"my.public.ip:5051"}) // register service in etcd
-
-	// on the client
-	SetCluster([]string{"public.etcd.ip:4001"})
 	conn, err := Dial("tcp", "secret.service")
 	if err != nil {
-		fmt.Printf("Error dialing golang.org")
+		log.Printf("Error dialing golang.org")
 	}
 	defer conn.Close()
-	// Use connection
-	// ...
+
+	// Now we are connected to 10.0.0.1:5051
+	// we can write a HTTP request...
+	_, err = conn.Write([]byte("GET / HTTP/1.1\nHost: secret.service\n"))
+}
+
+func ExampleDialTimeout() {
+	// Resolves a `secret.service` to IP and port from etcd
+	// Aborts if it's not possible under 10 seconds
+	conn, err := DialTimeout("tcp", "secret.service", 10*time.Second)
+	if err != nil {
+		log.Printf("Error dialing golang.org")
+	}
+	defer conn.Close()
+
+	// Now we are connected to 10.0.0.1:5051
+	// we can write a HTTP request...
+	_, err = conn.Write([]byte("GET / HTTP/1.1\nHost: secret.service\n"))
+}
+
+func ExampleLookup() {
+	ips, err := Lookup("secret.service")
+	if err != nil {
+		log.Fatalf("lookup error:", err)
+	}
+	log.Println("ips =>", ips)
+	// ips => []string{"10.0.0.1:5051"}
+}
+
+func ExampleLookupHost() {
+	ips, err := LookupHost("secret.service")
+	if err != nil {
+		log.Fatalf("lookup error:", err)
+	}
+	log.Println("ips =>", ips)
+	// ips => []string{"10.0.0.1:5051"}
+}
+
+func ExampleRegister() {
+	go Register("secret.service", []string{"10.0.0.1:5051"}) // register service in etcd
+	http.ListenAndServe("10.0.0.1:5051", nil)                // start listening for connections
+}
+
+func ExampleUnregister() {
+	// when registering a service in etcd
+	// defer unregister on clean exit
+	defer func() {
+		Unregister("secret.service", []string{"10.0.0.1:5051"})
+	}()
 }
 
 func ExampleSetCluster() {

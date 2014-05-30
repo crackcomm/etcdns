@@ -7,12 +7,13 @@ import (
 
 var DefaultClient = NewClient([]string{"127.0.0.1:4001"})
 
-// Lookups host in etcd
+// Looks for IP addresses (and ports if necessary) in etcd under /dns/{host} key.
 func Lookup(host string) (ips []string, err error) {
 	return DefaultClient.Lookup(host)
 }
 
-// Lookups host in etcd if not found lookups in DNS and stores the result in etcd.
+// Looks for IP addresses in etcd using Lookup function.
+// If nothing was found resolves from DNS using net.LookupHost and saves result in etcd.
 func LookupHost(host string) (ips []string, err error) {
 	return DefaultClient.LookupHost(host)
 }
@@ -22,23 +23,23 @@ func SetCluster(cluster []string) bool {
 	return DefaultClient.SetCluster(cluster)
 }
 
-// Dials address using etcdns Dialer
+// First lookups a IP address (and port if necessary) of host in etcd under /dns/{host} key.
+// Then tries to connect.
 func Dial(network, address string) (net.Conn, error) {
 	return DefaultClient.Dial(network, address)
 }
 
-// Dials address using etcdns Dialer with custom timeout
+// Dials like Dial using custom timeout.
 func DialTimeout(network, address string, timeout time.Duration) (conn net.Conn, err error) {
 	return DefaultClient.DialTimeout(network, address, timeout)
 }
 
-// Writes given addresses in etcd under /dns/{host}/{ip} key.
-// They will be possible to Dial like normal hosts.
+// Saves IP addresses (and ports if necessary) in etcd under /dns/{host}/{ip} key.
 func Register(host string, ips []string) error {
 	return DefaultClient.Register(host, ips)
 }
 
-// Unregisters given IPs for host.
+// Removes IP addresses (and ports if necessary) from etcd under /dns/{host}/{ip} keys.
 func Unregister(host string, ips []string) error {
 	return DefaultClient.Unregister(host, ips)
 }
